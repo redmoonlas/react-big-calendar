@@ -1,9 +1,9 @@
 {
-  "name": "react-big-calendar",
-  "version": "0.14.0",
-  "description": "Calendar! with events",
-  "author": "Jason Quense <monastic.panic@gmail.com>",
-  "repository": "intljusticemission/react-big-calendar",
+  "name": "react-touch-big-calendar",
+  "version": "0.0.1",
+  "description": "A fork of react-big-calendar with touch events mngt",
+  "author": "Salvatore Avanzo <salvatore.avanzo@gmail.com>",
+  "repository": "redmoonlas/react-touch-big-calendar",
   "license": "MIT",
   "main": "lib/index.js",
   "style": "lib/css/react-big-calendar.css",
@@ -19,7 +19,8 @@
     "react",
     "calendar",
     "events",
-    "full calendar"
+    "full calendar",
+    "touch events"
   ],
   "scripts": {
     "clean": "rimraf lib",
