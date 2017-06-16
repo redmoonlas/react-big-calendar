@@ -28,14 +28,22 @@ class Selection {
 
     this._listeners = Object.create(null);
 
-    this._mouseDown = this._mouseDown.bind(this)
-    this._mouseUp = this._mouseUp.bind(this)
-    this._openSelector = this._openSelector.bind(this)
-    this._keyListener = this._keyListener.bind(this)
+    this._mouseDown = this._mouseDown.bind(this);
+    this._mouseUp = this._mouseUp.bind(this);
+    this._openSelector = this._openSelector.bind(this);
+    this._keyListener = this._keyListener.bind(this);
 
-    this._onMouseDownListener = addEventListener('mousedown', this._mouseDown)
-    this._onKeyDownListener = addEventListener('keydown', this._keyListener)
-    this._onKeyUpListener = addEventListener('keyup', this._keyListener)
+    this._touchStart = this._touchStart.bind(this);
+    this._touchCancel = this._touchCancel.bind(this);
+    this._touchMove = this._touchMove.bind(this);
+    this._touchEnd = this._touchEnd.bind(this);
+
+    this._onMouseDownListener = addEventListener('mousedown', this._mouseDown);
+    this._onKeyDownListener = addEventListener('keydown', this._keyListener);
+    this._onKeyUpListener = addEventListener('keyup', this._keyListener);
+
+    this._onTouchStartListener = addEventListener('touchstart', this._touchStart);
+
   }
 
   on(type, handler) {
@@ -67,7 +75,12 @@ class Selection {
     this._onMouseUpListener && this._onMouseUpListener.remove();
     this._onMouseMoveListener && this._onMouseMoveListener.remove();
     this._onKeyUpListener && this._onKeyUpListener.remove();
-    this._onKeyDownListener && this._onKeyDownListener.remove()
+    this._onKeyDownListener && this._onKeyDownListener.remove();
+
+    this._onTouchStartListener && this._onTouchStartListener.remove();
+    this._onTouchCancelListener && this._onTouchCancelListener.remove();
+    this._onTouchMoveListener && this._onTouchMoveListener.remove();
+    this._onTouchEndListener && this._onTouchEndListener.remove();
   }
 
   isSelected(node){
@@ -87,6 +100,117 @@ class Selection {
 
     return items.filter(this.isSelected, this)
   }
+
+
+    _touchStart (e) {
+        var node = this.container(), collides, offsetData;
+
+        // Right clicks
+        if (isOverContainer(node, e.touches[0].clientX, e.touches[0].clientY)) {
+            e.preventDefault();
+            
+            if (!this.globalMouse && node && !contains(node, e.target)) {
+
+                let { top, left, bottom, right } = normalizeDistance(0);
+
+                offsetData = getBoundsForNode(node);
+
+                collides = objectsCollide({
+                    top: offsetData.top - top,
+                    left: offsetData.left - left,
+                    bottom: offsetData.bottom + bottom,
+                    right: offsetData.right + right
+                },
+                                          { top: e.pageY, left: e.pageX });
+
+                if (!collides) return;
+            }
+
+            let result = this.emit('mousedown', this._mouseDownData = {
+                x: e.touches[0].pageX,
+                y: e.touches[0].pageY,
+                clientX: e.touches[0].clientX,
+                clientY: e.touches[0].clientY
+            });
+
+            if (result === false)
+                return;
+
+            this._onTouchCancelListener = addEventListener('touchcancel', this._touchCancel);
+            this._onTouchMoveListener = addEventListener('touchmove', this._touchMove);
+            this._onTouchEndListener = addEventListener('touchend', this._touchEnd);
+        }
+    }
+
+    _touchCancel (e) {
+        this._onTouchCancelListener && this._onTouchCancelListener.remove();
+        this._onTouchMoveListener && this._onTouchMoveListener.remove();
+        this._onTouchEndListener && this._onTouchEndListener.remove();
+
+        this._mouseDownData = null
+
+        this.selecting = false;
+    }
+
+    _touchMove (e) {
+        e.preventDefault();
+        
+        var { x, y } = this._mouseDownData;
+        var w = Math.abs(x - e.touches[0].pageX);
+        var h = Math.abs(y - e.touches[0].pageY);
+
+        let left = Math.min(e.touches[0].pageX, x)
+        , top = Math.min(e.touches[0].pageY, y)
+        , old = this.selecting;
+
+        this.selecting = true;
+
+        if (!old) {
+            this.emit('selectStart', this._mouseDownData)
+        }
+
+        if (!this.isClick(e.touches[0].pageX, e.touches[0].pageY))
+            this.emit('selecting', this._selectRect = {
+                top,
+                left,
+                x: e.touches[0].pageX,
+                y: e.touches[0].pageY,
+                right: left + w,
+                bottom: top + h
+            });
+    }
+
+    _touchEnd (e) {
+        this._onTouchCancelListener && this._onTouchCancelListener.remove();
+        this._onTouchMoveListener && this._onTouchMoveListener.remove();
+        this._onTouchEndListener && this._onTouchEndListener.remove();
+
+        if (!this._mouseDownData) return;
+
+        var inRoot = !this.container || contains(this.container(), e.target);
+        var bounds = this._selectRect;
+        var click = this.isClick(e.changedTouches[0].pageX, e.changedTouches[0].pageY);
+
+        this._mouseDownData = null
+
+        if(click && !inRoot) {
+            return this.emit('reset')
+        }
+
+        if(click && inRoot)
+            return this.emit('click', {
+                x: e.changedTouches[0].pageX,
+                y: e.changedTouches[0].pageY,
+                clientX: e.changedTouches[0].clientX,
+                clientY: e.changedTouches[0].clientY,
+            })
+
+        // User drag-clicked in the Selectable area
+        if(!click)
+            return this.emit('select', bounds)
+
+        this.selecting = false;
+    }
 
   _mouseDown (e) {
     var node = this.container()
