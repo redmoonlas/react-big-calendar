@@ -1,6 +1,6 @@
 {
   "name": "react-touch-big-calendar",
-  "version": "0.0.2b0",
+  "version": "0.0.3",
   "description": "A fork of react-big-calendar with touch events mngt",
   "author": "Salvatore Avanzo <salvatore.avanzo@gmail.com>",
   "repository": "redmoonlas/react-touch-big-calendar",
