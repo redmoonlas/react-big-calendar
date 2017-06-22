@@ -66,6 +66,7 @@ class BackgroundCells extends React.Component {
               key={index}
               value={date}
               range={range}
+              selected={selected}
             >
               <div
                 style={segStyle(1, range.length)}

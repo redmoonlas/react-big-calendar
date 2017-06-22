@@ -9,6 +9,10 @@
     "plugins": [
         "transform-es2015-destructuring",
         "transform-object-rest-spread",
-        "transform-class-properties"
+        "transform-class-properties",
+        "syntax-dynamic-import",
+        "transform-export-extensions",
+        "transform-object-assign",
+        "transform-runtime"
     ]
 }
